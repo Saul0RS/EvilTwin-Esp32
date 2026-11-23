@@ -1,7 +1,7 @@
 #include "funcoes_evtw.h"
 
-const char* SSID_ALVO = "Senac-Adm"; 
-const char* SENHA_REAL = "bemvindoaocesar"; 
+const char* SSID_ALVO = "GlubGlub"; 
+const char* SENHA_REAL = "congratulations"; 
 
 int canal_alvo = 1; 
 uint8_t bssid_alvo[6] = {0, 0, 0, 0, 0, 0};
