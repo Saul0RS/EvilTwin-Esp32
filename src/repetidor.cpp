@@ -36,9 +36,22 @@ void configurarRepetidor() {
 }
 
 void loopRepetidor() {
-    // Se perder a conexão com a internet, tenta reconectar
+    static unsigned long ultimo_anuncio = 0;
+    unsigned long agora = millis();
+
+    // Se perder a conexão com a internet, pausa o deauth e tenta reconectar.
+    // Pausar e' essencial: durante a reassociacao o STA fica vulneravel e o
+    // flood poderia impedir o uplink de voltar.
     if (WiFi.status() != WL_CONNECTED) {
+        enlaceAnunciar(false);        // go=0 -> deauth pausa
         WiFi.reconnect();
-        delay(5000); 
+        delay(5000);
+        return;
+    }
+
+    // Conectado: anuncia o estado ~1x/s e autoriza o deauth (go=1).
+    if (agora - ultimo_anuncio >= 1000) {
+        ultimo_anuncio = agora;
+        enlaceAnunciar(nat_ativo);    // so libera flood com o NAT no ar
     }
 }
