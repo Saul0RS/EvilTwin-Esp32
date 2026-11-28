@@ -1,0 +1,15 @@
+# --- CONFIGURAÇÕES OBRIGATÓRIAS PARA O ARDUINO ---
+# O Arduino exige que o tick do FreeRTOS seja 1000 (1ms). 
+# O padrão do ESP-IDF é 100, o que causa erro de compilação.
+CONFIG_FREERTOS_HZ=1000
+
+# Garante que as funções setup() e loop() do Arduino sejam chamadas automaticamente
+CONFIG_AUTOSTART_ARDUINO=y
+
+# --- CONFIGURAÇÕES DE REDE PARA O REPETIDOR (NAT) ---
+# Ativa o encaminhamento de pacotes IP na pilha de rede (lwIP)
+CONFIG_LWIP_IP_FORWARD=y
+
+# Ativa o NAPT (Network Address Port Translation)
+# É isso que permite o ESP32 compartilhar a internet da rede real com o AP Falso
+CONFIG_LWIP_IPV4_NAPT=y
